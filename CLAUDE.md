@@ -35,11 +35,17 @@ docker compose up -d                 # Run detached
 docker compose down                  # Stop all services
 
 # Local dev server (without Docker)
+# src/main.py must expose `app = create_app()` at module level
 uv run uvicorn src.main:app --reload --port 8000
 
 # DB migrations (from v2)
 uv run alembic upgrade head          # Apply migrations
 uv run alembic revision --autogenerate -m "description"  # Create migration
+
+# Linting & formatting (ruff configured in pyproject.toml)
+uv run ruff check src/ tests/        # Lint
+uv run ruff format src/ tests/       # Format
+uv run ruff check --fix src/         # Auto-fix lint issues
 
 # Git workflow
 git tag v0                           # Tag version milestones
@@ -67,6 +73,7 @@ git tag v0                           # Tag version milestones
 - vLLM with OpenAI-compatible API, Nginx as reverse proxy/LB
 - Docker + Docker Compose, `uv` package manager
 - Testing: `pytest` + `pytest-asyncio`, `httpx.AsyncClient` with `ASGITransport`
+- Linting/formatting: `ruff` | Type checking: `pyright` (both configured in `pyproject.toml`)
 
 ## Critical Coding Rules
 
