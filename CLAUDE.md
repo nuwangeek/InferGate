@@ -22,6 +22,9 @@ Each version must be a fully working, runnable API. Use git tags (`v0`, `v1`, ..
 ## Build & Run Commands
 
 ```bash
+# First-time setup
+cp .env.example .env                 # then edit VLLM_BASE_URL / VLLM_MODEL as needed
+
 # Package manager: uv (not pip)
 uv sync                              # Install dependencies
 uv run pytest                        # Run all tests
@@ -94,12 +97,13 @@ git tag v0                           # Tag version milestones
 
 - Use `httpx.AsyncClient` with `ASGITransport`, not `TestClient`
 - Mock vLLM responses — tests must not depend on running vLLM
-- Fixtures in `tests/conftest.py` for app instance, async client, mock vLLM, test DB
+- `pytest-asyncio` runs in `auto` mode — no `@pytest.mark.asyncio` decorator needed
+- `tests/conftest.py` provides a bare `client` fixture (no vLLM mock) for endpoints like `/health`; tests that call vLLM routes define their own mock fixture (e.g. `client_and_mock` in `test_chat.py`) by overriding `app.state.vllm_client`
 - Test both happy paths and error cases (bad auth, rate limited, vLLM down)
 
 ## Version-Specific Notes
 
-**v0**: Factory pattern app, lifespan-managed `httpx.AsyncClient`, `VLLMClient` class with `chat_completion()` method. Docker Compose: `api` + `vllm` services. Mock vLLM with FastAPI stub for local dev without GPU.
+**v0**: Factory pattern app, lifespan-managed `httpx.AsyncClient`, `VLLMClient` class with `chat_completion()` method. Docker Compose: `api` + `vllm` services. `mock_vllm/` is a self-contained FastAPI app with its own `Dockerfile` and `requirements.txt`; it is the `vllm` service in `docker-compose.yml` so the full stack runs without a GPU. Its response shape is identical to real vLLM.
 
 **v1**: `StreamingResponse(media_type="text/event-stream")` with async generator. Same endpoint handles stream/non-stream.
 
